@@ -8,7 +8,7 @@ fish.Realm = {
     SHARED = 2
 }
 
---- @param filePath string use the file name if you
+--- @param filePath string file name if detectName is false
 --- @param detectName? boolean defaults to true
 --- @nodiscard
 --- @return fish.Realm
