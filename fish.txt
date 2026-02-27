@@ -1,0 +1,7 @@
+"campaign"
+{
+    "base"          "sandbox"
+    "title"         "fish framework"
+    "author"        "aindrigo"
+    "category"      "other"
+}
