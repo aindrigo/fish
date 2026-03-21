@@ -1,4 +1,4 @@
-"campaign"
+"fish"
 {
     "base"          "sandbox"
     "title"         "fish framework"

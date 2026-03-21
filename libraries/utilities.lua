@@ -1,18 +1,42 @@
 fish.utilities = fish.utilities or {}
 
---- merges 2 tables, similar to table.Inherit but recursive & does not set BaseClass
+--- merges 2 tables
 --- @param source table
 --- @param target table
 --- @return table
 function fish.utilities.Merge(source, target)
     local function visit(treeSource, treeTarget)
+
         for key, value in pairs(treeTarget) do
-            treeSource[key] = value
+            if istable( value ) then
+                visit( treeTarget, value )
+            else
+                treeSource[key] = value
+            end
         end
+
     end
 
     visit(source, target)
     return source
+end
+
+--- merges 2 tables, similar to table.Inherit but recursive & does not set BaseClass
+--- @param source table
+--- @param dest table
+--- @return table
+function fish.utilities.Inherit(source, dest)
+    for key, value in pairs(source) do
+        if dest[key] == nil then
+            dest[key] = value
+        end
+
+        if istable(value) and istable(dest[key]) then
+            dest[key] = fish.utilities.Inherit( value, dest[key] )
+        end
+    end
+
+    return dest
 end
 
 --- defines members of the table as hooks
