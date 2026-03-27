@@ -84,7 +84,7 @@ end
 function fish.modules.Get(id)
     return fish.modules.list[id]
 end
-     
+
 --- internal: loads a module's scripts
 --- @param module table
 function fish.modules._LoadScripts(module)
@@ -94,6 +94,106 @@ function fish.modules._LoadScripts(module)
 
     for filePath, fileName in fish.DirectoryIterator(module.Path .. "/scripts", "*.lua", true, true, false) do
         fish.Include(filePath, module.Realm or fish.DetectRealm(fileName, false))
+    end
+end
+
+local function includeEntityDirectory(path, clientOnly)
+    if SERVER and clientOnly then
+        if file.Exists(path.."shared.lua", "LUA") then
+            fish.Include(path.."shared.lua", fish.Realm.CLIENT)
+        end
+
+        if file.Exists(path.."cl_init.lua", "LUA") then
+            fish.Include(path.."cl_init.lua", fish.Realm.CLIENT)
+            return
+        end
+        return
+    end
+
+    if file.Exists(path.."shared.lua", "LUA") then
+        fish.Include(path.."shared.lua", fish.Realm.SHARED)
+    end
+
+    if file.Exists(path.."cl_init.lua", "LUA") then
+        fish.Include(path.."cl_init.lua", fish.Realm.CLIENT)
+    end
+
+    if file.Exists(path.."init.lua", "LUA") then
+        fish.Include(path.."init.lua", fish.Realm.SERVER)
+    end
+end
+
+--- internal: loads a module's SENTs and SWEPs
+--- @param module table
+function fish.modules._LoadEntities(module)
+    local toolsChanged = false
+
+    local function handleIncludeType(dir, var, registerFunc, base, clientOnly)
+        base = base or {}
+
+
+        for path, folder in fish.DirectoryIterator(module.Path.."/entities/"..dir, "*", false, false, true) do
+            _G[var] = table.Copy(base)
+
+            includeEntityDirectory(path.."/", clientOnly)
+
+            if clientOnly then
+                if CLIENT then
+                    registerFunc(_G[var], folder)
+                end
+            else
+                registerFunc(_G[var], folder)
+            end
+
+            _G[var] = nil
+        end
+
+        for path, file in fish.DirectoryIterator(module.Path .. "/entities/"..dir, "*.lua", false, true, false) do
+            local class = file:StripExtension()
+
+            _G[var] = table.Copy(base)
+            _G[var].ClassName = class
+
+            fish.Include(path, clientOnly and fish.Realm.CLIENT or fish.Realm.SHARED)
+
+            if clientOnly then
+                if CLIENT then
+                    registerFunc(_G[var], class)
+                end
+            else
+                registerFunc(_G[var], class)
+            end
+
+            _G[var] = nil
+        end
+    end
+
+    handleIncludeType("entities", "ENT", scripted_ents.Register, {
+        Type = "anim",
+        Base = "base_gmodentity",
+        Spawnable = true,
+    })
+
+    handleIncludeType("weapons", "SWEP", weapons.Register, {
+        Primary = {},
+        Secondary = {},
+        Base = "weapon_base"
+    })
+
+    handleIncludeType("tools", "TOOL", function(tool, class)
+        local gmodTool = weapons.GetStored("gmod_tool")
+        if class:sub(1, 3) == "sh_" then
+            class = class:sub(4)
+        end
+
+        gmodTool.Tool[class] = tool
+        toolsChanged = true
+    end)
+
+    handleIncludeType("effects", "EFFECT", effects and effects.Register, nil, true)
+
+    if CLIENT and toolsChanged then
+        RunConsoleCommand("spawnmenu_reload")
     end
 end
 
@@ -121,7 +221,7 @@ end
 --- @param prePost boolean false for pre, true for post
 --- @param reloading boolean if the module is enabling or reloading
 function fish.modules._DoEnable(module, prePost, reloading)
-    if (module.Realm == fish.Realm.CLIENT and not CLIENT) 
+    if (module.Realm == fish.Realm.CLIENT and not CLIENT)
         or (module.Realm == fish.Realm.SERVER and not SERVER) then
         return
     end
@@ -147,7 +247,7 @@ end
 --- @param module table
 --- @param prePost boolean false for pre, true for post
 function fish.modules._DoDisable(module, prePost)
-    if (module.Realm == fish.Realm.CLIENT and not CLIENT) 
+    if (module.Realm == fish.Realm.CLIENT and not CLIENT)
         or (module.Realm == fish.Realm.SERVER and not SERVER) then
         return
     end
@@ -236,6 +336,7 @@ function fish.modules.LoadDirectory(directoryPath, directoryName)
 
     fish.modules._DoEnable(module, false, exists)
     fish.modules._LoadScripts(module)
+    fish.modules._LoadEntities(module)
     module = fish.modules._End()
 
     fish.modules.list[module.Id] = module
@@ -268,7 +369,7 @@ function fish.modules.Load(path, name)
 end
 
 --- internal: sorts modules by their dependencies
---- @param modules table<string, table> 
+--- @param modules table<string, table>
 --- @return table<table> sortedModules
 function fish.modules.SortModules(modules)
     local sortedModules = {}
@@ -364,11 +465,12 @@ function fish.modules.LoadAll(paths)
             fish.modules.list[module.Id] = module
             continue
         end
-        
+
         local reloading = reloadingModules[module.Id]
         fish.modules._Begin(module)
         fish.modules._DoEnable(module, false, reloading)
         fish.modules._LoadScripts(module)
+        fish.modules._LoadEntities(module)
 
         module = fish.modules._End()
         fish.modules.orderedList[index] = module.Id
