@@ -50,8 +50,8 @@ function fish.utilities.DefineHooks(tbl, parent)
         if not isfunction(value) then continue end
 
         local debugInfo = debug.getinfo(value, "S")
-        local name = debugInfo.short_src .. "_" .. key
-        hook.Add(key, name, function(...) return tbl[key](parent, ...) end)
+        local name = debugInfo.short_src .. "::" .. key
+        hook.Add(key, name, function(...) return value(parent, ...) end)
 
         hooks[key] = name
     end

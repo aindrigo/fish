@@ -31,8 +31,12 @@ function fish.modules._End()
     local hookTable = _G["HOOKS"]
     _G["HOOKS"] = nil
 
-    module.Hooks = module.Hooks or {}
-    table.Merge(module.Hooks, hookTable, false)
+    if istable(module.Hooks) then
+        hookTable = fish.utilities.Merge(module.Hooks, hookTable)
+    end
+
+
+    module.Hooks = hookTable
 
     return module
 end
@@ -200,20 +204,23 @@ end
 --- internal: (re)loads hooks for a module
 --- @param module table
 function fish.modules._ReloadHooks(module)
+    local newHooks
     if istable(module.Hooks) then
-        local newHooks = fish.utilities.DefineHooks(module.Hooks, module)
-        local oldHooks = fish.modules.hooks[module.Id]
-        if istable(oldHooks) then
-            for hookName, hookId in pairs(oldHooks) do
-                local newHookId = newHooks[hookName]
-                if newHookId and newHookId == hookId then continue end
+        newHooks = fish.utilities.DefineHooks(module.Hooks, module)
+    end
 
-                hook.Remove(hookName, hookId)
-            end
+    local oldHooks = fish.modules.hooks[module.Id]
+    if istable(oldHooks) then
+        for hookName, hookId in pairs(oldHooks) do
+            if istable(newHooks) and newHooks[hookName] == hookId then continue end
+            hook.Remove(hookName, hookId)
         end
+    end
 
+    if istable(newHooks) then
         fish.modules.hooks[module.Id] = newHooks
     end
+
 end
 
 --- internal: runs the enabling logic for a module
@@ -329,7 +336,7 @@ function fish.modules.LoadDirectory(directoryPath, directoryName)
 
     local exists = istable(fish.modules.list[module.Id])
     if exists then
-        module = fish.utilities.inherit(fish.modules.list[module.Id], module)
+        module = fish.utilities.Merge(fish.modules.list[module.Id], module)
     end
     fish.modules._CheckModuleDependencies(module)
 
