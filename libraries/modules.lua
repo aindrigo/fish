@@ -279,7 +279,7 @@ end
 function fish.modules._LoadFile(filePath, fileName)
     fish.modules._Begin()
     fish.Include(filePath, fish.Realm.SHARED)
-    local module, hookTable = fish.modules._End()
+    local module = fish.modules._End()
 
     module.Id = module.Id or string.StripExtension(fileName or string.GetFileFromFilename(filePath))
     local exists = istable(fish.modules.list[module.Id])
@@ -290,7 +290,6 @@ function fish.modules._LoadFile(filePath, fileName)
 
     module.Path = filePath
     module.Type = fish.ModuleType.FILE
-    module.Hooks = hookTable
 
     return module, exists
 end
