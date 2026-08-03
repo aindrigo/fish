@@ -75,7 +75,7 @@ function fish.modules._CheckModuleDependencies(module)
     local moduleNames = {}
     for _, dependencyId in ipairs(module.Dependencies) do
         if istable(fish.modules.list[dependencyId]) then continue end
-        table.insert(moduleNames, dependencyId)
+        moduleNames[#moduleNames + 1] = dependencyId
     end
 
     if not table.IsEmpty(moduleNames) then
@@ -312,7 +312,7 @@ function fish.modules.LoadFile(filePath, fileName)
     fish.modules._DoEnable(module, false, exists)
 
     fish.modules.list[module.Id] = module
-    table.insert(fish.modules.orderedList, module.Id)
+    fish.modules.orderedList[#fish.modules.orderedList + 1] = module.Id
 
     fish.modules._DoEnable(module, true, exists)
 
@@ -346,7 +346,7 @@ function fish.modules.LoadDirectory(directoryPath, directoryName)
     module = fish.modules._End()
 
     fish.modules.list[module.Id] = module
-    table.insert(fish.modules.orderedList, module.Id)
+    fish.modules.orderedList[#fish.modules.orderedList + 1] = module.Id
 
     fish.modules._DoEnable(module, true, exists)
 
@@ -354,7 +354,7 @@ function fish.modules.LoadDirectory(directoryPath, directoryName)
     if file.Exists(submodulePath, "LUA") then
         local paths = {}
         for path, _ in fish.DirectoryIterator(submodulePath, "*", false, true, true) do
-            table.insert(paths, path)
+            paths[#paths + 1] = path
         end
 
         fish.modules.LoadAll(paths)
@@ -404,7 +404,7 @@ function fish.modules.SortModules(modules)
         temporaryMarks[module.Id] = nil
         permanentMarks[module.Id] = true
 
-        table.insert(sortedModules, module)
+        sortedModules[#sortedModules + 1] = module
     end
 
     local moduleCount = table.Count(modules)
@@ -491,7 +491,7 @@ end
 function fish.modules.LoadAllFromDirectory(directoryPath)
     local paths = {}
     for filePath, _ in fish.DirectoryIterator(directoryPath, "*", false, true, true) do
-        table.insert(paths, filePath)
+        paths[#paths + 1] = filePath
     end
 
     return fish.modules.LoadAll(paths)
