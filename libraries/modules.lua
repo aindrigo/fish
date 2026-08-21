@@ -99,6 +99,8 @@ function fish.modules._LoadScripts(module)
     for filePath, fileName in fish.DirectoryIterator(module.Path .. "/scripts", "*.lua", true, true, false) do
         fish.Include(filePath, module.Realm or fish.DetectRealm(fileName, false))
     end
+
+    hook.Run("Fish_Modules_LoadScripts", module)
 end
 
 local function includeEntityDirectory(path, clientOnly)
@@ -397,6 +399,8 @@ function fish.modules.SortModules(modules)
 
         if istable(module.Dependencies) then
             for _, dependencyId in ipairs(module.Dependencies) do
+                if not modules[dependencyId] then print( dependencyId, "failed" ) end
+
                 visit(modules[dependencyId])
             end
         end
