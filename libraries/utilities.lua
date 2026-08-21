@@ -28,15 +28,39 @@ end
 function fish.utilities.Inherit(source, dest)
     for key, value in pairs(source) do
         if dest[key] == nil then
-            dest[key] = value
-        end
+            if istable( value ) then
+                dest[key] = table.Copy( value )
+            else
+                dest[key] = value
+            end
 
-        if istable(value) and istable(dest[key]) then
+        elseif istable(value) and istable(dest[key]) then
             dest[key] = fish.utilities.Inherit( value, dest[key] )
         end
     end
 
     return dest
+end
+
+--- @param s string?
+--- @return Player?
+function fish.utilities.FindPlayer( s )
+    if not s or s == "" then return nil end
+    local searchPlayers = player.GetAll()
+    local lowerKey = string.lower( tostring( s ) )
+
+    for i = 1, #searchPlayers do
+        local v = searchPlayers[i]
+
+        if s == v:SteamID() then return v end
+        if s == v:SteamID64() then return v end
+
+        if string.find( string.lower( v:Nick() ), lowerKey, 1, true ) ~= nil then
+            return v
+        end
+    end
+
+    return nil
 end
 
 --- defines members of the table as hooks
