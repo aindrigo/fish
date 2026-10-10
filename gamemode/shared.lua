@@ -118,7 +118,7 @@ fish.IncludeDirectory("fish/libraries", fish.Realm.SHARED)
 function fish.Init()
     local activeGamemode = engine.ActiveGamemode()
     local gamemodeDirectory = activeGamemode .. "/fish"
-    fish.IncludeDirectory(gamemodeDirectory .. "/libraries", fish.Realm.SHARED)
+    fish.IncludeDirectory(gamemodeDirectory .. "/libraries")
 
     fish.modules.LoadAllFromDirectory("fish/modules")
     fish.modules.LoadAllFromDirectory(gamemodeDirectory .. "/modules")
